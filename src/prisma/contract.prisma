@@ -1,0 +1,246 @@
+// use prisma-next
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  displayName   String
+  email         String    @unique
+  profileImage  String?
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now())
+
+  watchlist         Watchlist[]
+  watchedMovies     WatchedMovie[]
+  diaryEntries      DiaryEntry[]
+  reviews           Review[]
+  movieThoughts     MovieThought[]
+  interpretations   Interpretation[]
+  interpretationResponses InterpretationResponse[]
+  discussions       Discussion[]
+  discussionResponses DiscussionResponse[]
+  tasteProfile      TasteProfile?
+
+  @@index([username])
+  @@index([email])
+}
+
+model Movie {
+  id              Int       @id @default(autoincrement())
+  externalId      String    @unique
+  title           String
+  originalTitle   String?
+  overview        String?
+  releaseDate     DateTime?
+  posterPath      String?
+  backdropPath    String?
+  runtime         Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now())
+
+  genres            MovieGenre[]
+  watchlistEntries  Watchlist[]
+  watchedMovies     WatchedMovie[]
+  diaryEntries      DiaryEntry[]
+  reviews           Review[]
+  movieThoughts     MovieThought[]
+  interpretations   Interpretation[]
+  discussions       Discussion[]
+
+  @@index([externalId])
+  @@index([title])
+  @@index([releaseDate])
+}
+
+model Genre {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+
+  movies MovieGenre[]
+
+  @@index([name])
+}
+
+model MovieGenre {
+  movieId Int
+  genreId Int
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+}
+
+model Watchlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId])
+  @@index([movieId])
+}
+
+model WatchedMovie {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  watchedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+  @@index([userId])
+  @@index([movieId])
+  @@index([watchedAt])
+}
+
+model DiaryEntry {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  movieId      Int
+  watchedAt    DateTime
+  personalNote String?
+  visibility   String   @default("PRIVATE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([movieId])
+  @@index([watchedAt])
+  @@index([visibility])
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  movieId    Int
+  content    String
+  rating     Float?
+  spoiler    Boolean  @default(false)
+  visibility String   @default("PUBLIC")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([movieId])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model MovieThought {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  movieId   Int
+  type      String
+  content   String
+  spoiler   Boolean  @default(false)
+  visibility String   @default("PUBLIC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([movieId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([visibility])
+}
+
+model Interpretation {
+  id          Int      @id @default(autoincrement())
+  movieId     Int
+  userId      Int
+  title       String
+  description String
+  spoiler     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  movie    Movie                    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses InterpretationResponse[]
+
+  @@index([movieId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model InterpretationResponse {
+  id              Int      @id @default(autoincrement())
+  interpretationId Int
+  userId          Int
+  content         String
+  spoiler         Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+
+  interpretation Interpretation @relation(fields: [interpretationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([interpretationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Discussion {
+  id        Int      @id @default(autoincrement())
+  movieId   Int
+  userId    Int
+  title     String
+  content   String
+  spoiler   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  movie    Movie               @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses DiscussionResponse[]
+
+  @@index([movieId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model DiscussionResponse {
+  id           Int      @id @default(autoincrement())
+  discussionId Int
+  userId       Int
+  content      String
+  spoiler      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model TasteProfile {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  preferences  Json     @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
